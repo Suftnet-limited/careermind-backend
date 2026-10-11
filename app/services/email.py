@@ -106,8 +106,12 @@ def p(text: str) -> str:
     return f'<p style="margin:0 0 17px;font-size:15px;line-height:1.68;color:#475569">{text}</p>'
 
 
-async def send_email(to: str, subject: str, html: str) -> bool:
-    """Send one email. Never raises — a failed email must not break the request that triggered it."""
+TRANQUIS_FROM_NAME = "Tranquis"
+
+
+async def send_email(to: str, subject: str, html: str, from_name: str | None = None) -> bool:
+    """Send one email. Never raises — a failed email must not break the request that triggered it.
+    `from_name` overrides the sender name; Tranquis emails pass TRANQUIS_FROM_NAME."""
     global _sender
     if not email_configured():
         logger.warning("Email not configured (BREVO_API_KEY / BREVO_FROM_EMAIL) — not sending %r to %s", subject, to)
@@ -116,7 +120,7 @@ async def send_email(to: str, subject: str, html: str) -> bool:
         _sender = _sender or BrevoEmailSender(settings.brevo_api_key)
         result = await _sender.send_email(SendParams(
             to=[Recipient(to)],
-            sender=Recipient(settings.brevo_from_email, settings.brevo_from_name),
+            sender=Recipient(settings.brevo_from_email, from_name or settings.brevo_from_name),
             subject=subject,
             html_content=html,
             text_content=plain_text(html),
@@ -143,11 +147,11 @@ async def send_welcome_tranquis_email(to: str, name: str) -> bool:
 
     content = (
         h1(f"Welcome to Tranquis, {first}!")
-        + p("Your account is ready. You can now translate text, speech, and images across 20+ languages.")
+        + p("Your account is ready. You can now translate text, speech, and images across 35+ languages.")
         + p(
             "<strong>Your free plan includes:</strong><br/>"
             "✓ 10 text translations per day<br/>"
-            "✓ Access to 20+ languages<br/>"
+            "✓ Access to 35+ languages<br/>"
             "✓ Translation history"
         )
         + btn("Open Tranquis", "tranquis://home")
@@ -209,7 +213,7 @@ async def send_welcome_tranquis_email(to: str, name: str) -> bool:
 </body>
 </html>"""
 
-    return await send_email(to, "Welcome to Tranquis 🌍", html)
+    return await send_email(to, "Welcome to Tranquis 🌍", html, from_name=TRANQUIS_FROM_NAME)
 
 
 async def send_verification_email(to: str, name: str, token: str) -> bool:

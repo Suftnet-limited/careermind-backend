@@ -1,5 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from app.core.rate_limit import limiter, TRANSLATE_LIMIT, TRANSLATE_IMAGE_LIMIT, TRANSCRIBE_LIMIT, TTS_LIMIT
+from app.core.rate_limit import (
+    limiter, TRANSLATE_LIMIT, TRANSLATE_IMAGE_LIMIT, TRANSCRIBE_LIMIT, TTS_LIMIT,
+    PHRASEBOOK_READ_LIMIT, PHRASEBOOK_WRITE_LIMIT,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, delete, func
 from pydantic import BaseModel, Field
@@ -508,7 +511,9 @@ async def clear_history(
 
 
 @router.get("/phrasebook")
+@limiter.limit(PHRASEBOOK_READ_LIMIT)
 async def get_phrasebook(
+    request: Request,
     category: Optional[str] = Query(None, max_length=50),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -532,7 +537,9 @@ async def get_phrasebook(
 
 
 @router.post("/phrasebook")
+@limiter.limit(PHRASEBOOK_WRITE_LIMIT)
 async def save_phrase(
+    request: Request,
     req: PhraseRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -584,7 +591,9 @@ async def save_phrase(
 
 
 @router.delete("/phrasebook/{phrase_id}")
+@limiter.limit(PHRASEBOOK_WRITE_LIMIT)
 async def delete_phrase(
+    request: Request,
     phrase_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

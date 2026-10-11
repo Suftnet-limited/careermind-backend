@@ -13,7 +13,7 @@ from app.core.auth import hash_password, create_access_token, create_refresh_tok
 from app.core.rate_limit import limiter, client_ip
 from app.db.engine import get_db
 from app.db.models import User, PasswordResetToken
-from app.services.email import send_email, base_template, h1, p, btn, escape_html
+from app.services.email import TRANQUIS_FROM_NAME, send_email, base_template, h1, p, btn, escape_html
 from app.config import get_settings
 
 settings = get_settings()
@@ -70,7 +70,8 @@ async def send_password_reset_email(to: str, name: str, raw_token: str, app_sour
             f'<tr><td height="5" bgcolor="{brand_color}"',
         )
 
-    return await send_email(to, f"Reset your {brand} password", html)
+    return await send_email(to, f"Reset your {brand} password", html,
+                            from_name=TRANQUIS_FROM_NAME if app_source == "tranquis" else None)
 
 
 class ForgotPasswordRequest(BaseModel):

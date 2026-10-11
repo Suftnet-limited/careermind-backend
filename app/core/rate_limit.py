@@ -20,6 +20,8 @@ TRANSLATE_LIMIT      = "200/hour"     # each one is a GPT-4o call
 TRANSLATE_IMAGE_LIMIT = "40/hour"     # vision calls cost more
 TRANSCRIBE_LIMIT     = "10/minute"    # audio is expensive — per user
 TTS_LIMIT            = "10/minute"
+PHRASEBOOK_READ_LIMIT  = "120/hour"   # listing tags any untagged phrases with GPT
+PHRASEBOOK_WRITE_LIMIT = "60/hour"    # each save is a tagging call
 
 
 def client_ip(request: Request) -> str:
