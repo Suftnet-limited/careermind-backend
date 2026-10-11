@@ -9,7 +9,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import hash_password
+from app.core.auth import hash_password, create_access_token, create_refresh_token
 from app.core.rate_limit import limiter, client_ip
 from app.db.engine import get_db
 from app.db.models import User, PasswordResetToken
@@ -153,3 +153,39 @@ async def reset_password(
     await db.commit()
 
     return {"reset": True}
+
+
+class InstantResetRequest(BaseModel):
+    email: EmailStr
+    new_password: str
+
+
+@router.post("/reset-password-instant")
+@limiter.limit(RESET_RATE_LIMIT, key_func=client_ip)
+async def reset_password_instant(
+    request: Request,
+    req: InstantResetRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Tranquis only: set a new password from the email alone and sign in.
+    Interquis accounts hold CVs and paid minutes, so they keep the emailed link.
+    """
+    if len(req.new_password) < 8:
+        raise HTTPException(400, "Password must be at least 8 characters")
+
+    result = await db.execute(
+        select(User).where(User.email == req.email.lower(), User.app_source == "tranquis")
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(404, "No Tranquis account uses this email")
+
+    user.hashed_password = hash_password(req.new_password)
+    await db.commit()
+
+    return {
+        "access_token": create_access_token(str(user.id), user.email),
+        "refresh_token": create_refresh_token(str(user.id)),
+        "token_type": "bearer",
+    }
