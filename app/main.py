@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.config import get_settings
 from app.db.migrations import run_migrations
-from app.api.v1 import auth, sessions, interviews, admin, translate, phrasebook, password_reset
+from app.api.v1 import auth, sessions, interviews, admin, translate, password_reset
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -81,7 +81,6 @@ app.include_router(sessions.router,       prefix="/api/v1")
 app.include_router(interviews.router,     prefix="/api/v1")
 app.include_router(admin.router,          prefix="/api/v1")
 app.include_router(translate.router,      prefix="/api/v1")
-app.include_router(phrasebook.router,     prefix="/api/v1")
 
 
 @app.get("/health")

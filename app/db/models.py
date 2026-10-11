@@ -121,27 +121,33 @@ class PasswordResetToken(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-# ── Tranquis: translation history & phrasebook ───────────────────────────────
+# ── Tranquis (AI translation) ─────────────────────────────
 
-class TranslationHistory(Base):
-    """Every translation a user makes (text, voice, or camera)."""
-    __tablename__ = "translation_history"
+class TranslationRecord(Base):
+    __tablename__ = "translations"
 
     id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id         = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id         = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    type            = Column(String, default="text")   # text | voice | camera
+    source_lang     = Column(String, nullable=False)
+    target_lang     = Column(String, nullable=False)
     source_text     = Column(Text, nullable=False)
     translated_text = Column(Text, nullable=False)
-    source_lang     = Column(String, nullable=False, default="auto")
-    target_lang     = Column(String, nullable=False)
-    mode            = Column(String, nullable=False, default="text")  # text|voice|camera
+    tone            = Column(String, nullable=True)
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class PhrasebookEntry(Base):
-    """User-saved translations (starred from history)."""
-    __tablename__ = "phrasebook_entries"
+    __tablename__ = "phrasebook"
 
-    id             = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id        = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    translation_id = Column(UUID(as_uuid=True), ForeignKey("translation_history.id", ondelete="CASCADE"), nullable=False)
-    created_at     = Column(DateTime(timezone=True), server_default=func.now())
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id         = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    translation_id  = Column(UUID(as_uuid=True), ForeignKey("translations.id", ondelete="SET NULL"), nullable=True)
+    source_lang     = Column(String, nullable=False)
+    target_lang     = Column(String, nullable=False)
+    source_text     = Column(Text, nullable=False)
+    translated_text = Column(Text, nullable=False)
+    category        = Column(String, nullable=True)
+    section         = Column(String, nullable=True)   # e.g. "Airport & transport"
+    phonetic        = Column(Text, nullable=True)     # pronunciation guide for the translation
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
