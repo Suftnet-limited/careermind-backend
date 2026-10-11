@@ -61,6 +61,7 @@ MAX_AUDIO_BYTES = 25 * 1024 * 1024   # Whisper's own upload limit
 AUDIO_FORMATS = ("m4a", "mp3", "mp4", "mpeg", "mpga", "wav", "webm", "ogg", "flac")
 TTS_MAX_CHARS = 4096
 TTS_VOICE = "nova"
+TTS_VOICES = Literal["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
 
 # Phrasebook categories the app shows as chips. Phrases are tagged on save.
 PHRASE_CATEGORIES = ["travel", "food", "hotel", "medical", "business", "general"]
@@ -133,6 +134,7 @@ class TtsRequest(BaseModel):
     text: str = Field(min_length=1, max_length=TTS_MAX_CHARS)
     # Accepted for the app's convenience; OpenAI TTS picks the language from the text
     lang: Optional[str] = Field(default=None, max_length=10)
+    voice: TTS_VOICES = TTS_VOICE
 
 
 class PhraseRequest(BaseModel):
@@ -431,8 +433,8 @@ async def text_to_speech(
     client = AsyncOpenAI(api_key=settings.openai_api_key)
     try:
         response = await client.audio.speech.create(
-            model="tts-1",
-            voice=TTS_VOICE,
+            model="tts-1-hd",
+            voice=req.voice,
             input=text,
             response_format="mp3",
         )
