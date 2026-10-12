@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tranquis Pro — Choose Your Plan</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple: #6c47ff;
+    --purple-dark: #4f2fe0;
+    --purple-light: #ede9ff;
+    --indigo: #4338ca;
+    --text: #1a1523;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #f9f8ff;
+    --white: #ffffff;
+    --gold: #f59e0b;
+    --green: #10b981;
+    --radius: 16px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 40px;
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--purple) 0%, var(--indigo) 100%);
+    padding: 32px 20px 28px;
+    text-align: center;
+    color: var(--white);
+  }
+
+  .logo {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+
+  .logo span { opacity: 0.7; font-weight: 400; font-size: 20px; }
+
+  .header-tagline {
+    font-size: 15px;
+    opacity: 0.85;
+    margin-top: 6px;
+  }
+
+  .section {
+    padding: 28px 16px 0;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+  }
+
+  .plans { display: flex; flex-direction: column; gap: 12px; }
+
+  .plan-form { display: contents; }
+
+  .plan-card {
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: var(--text);
+    position: relative;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 72px;
+  }
+
+  .plan-card:active {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 3px rgba(108, 71, 255, 0.15);
+    transform: scale(0.99);
+  }
+
+  .plan-card.featured {
+    border-color: var(--purple);
+    background: var(--purple-light);
+  }
+
+  .plan-info { flex: 1; }
+
+  .plan-name {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .plan-sub {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .plan-badges { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+
+  .badge-trial {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .badge-best {
+    background: var(--gold);
+    color: #78350f;
+  }
+
+  .plan-price {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .price-amount {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--purple);
+    line-height: 1;
+  }
+
+  .price-period {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .plan-arrow {
+    color: var(--purple);
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-left: 4px;
+  }
+
+  .features {
+    margin-top: 28px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .features-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .feature-item:last-child { margin-bottom: 0; }
+
+  .feature-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--purple-light);
+    color: var(--purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .stripe-badge {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .stripe-badge svg { width: 36px; height: 16px; }
+
+  .cancel-note {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+
+  @media (hover: hover) {
+    .plan-card:hover {
+      border-color: var(--purple);
+      box-shadow: 0 4px 16px rgba(108, 71, 255, 0.12);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Tranquis <span>Pro</span></div>
+  <div class="header-tagline">Unlimited translations · No daily limits</div>
+</div>
+
+<div class="section">
+  <div class="section-title">Choose your plan</div>
+  <div class="plans">
+
+    <form class="plan-form" method="GET" action="/tranquis/subscribe">
+      <input type="hidden" name="user_id" value="{{ user_id }}">
+      <input type="hidden" name="plan" value="weekly">
+      <button type="submit" class="plan-card">
+        <div class="plan-info">
+          <div class="plan-name">Weekly</div>
+          <div class="plan-sub">Pay weekly, cancel any time</div>
+        </div>
+        <div class="plan-price">
+          <div class="price-amount">£1.99</div>
+          <div class="price-period">/ week</div>
+        </div>
+        <div class="plan-arrow">›</div>
+      </button>
+    </form>
+
+    <form class="plan-form" method="GET" action="/tranquis/subscribe">
+      <input type="hidden" name="user_id" value="{{ user_id }}">
+      <input type="hidden" name="plan" value="monthly">
+      <button type="submit" class="plan-card">
+        <div class="plan-info">
+          <div class="plan-name">Monthly</div>
+          <div class="plan-sub">Billed monthly</div>
+          <div class="plan-badges">
+            <span class="badge badge-trial">7-day free trial</span>
+          </div>
+        </div>
+        <div class="plan-price">
+          <div class="price-amount">£4.99</div>
+          <div class="price-period">/ month</div>
+        </div>
+        <div class="plan-arrow">›</div>
+      </button>
+    </form>
+
+    <form class="plan-form" method="GET" action="/tranquis/subscribe">
+      <input type="hidden" name="user_id" value="{{ user_id }}">
+      <input type="hidden" name="plan" value="quarterly">
+      <button type="submit" class="plan-card">
+        <div class="plan-info">
+          <div class="plan-name">3-Month</div>
+          <div class="plan-sub">£3.33 / month</div>
+        </div>
+        <div class="plan-price">
+          <div class="price-amount">£9.99</div>
+          <div class="price-period">/ 3 months</div>
+        </div>
+        <div class="plan-arrow">›</div>
+      </button>
+    </form>
+
+    <form class="plan-form" method="GET" action="/tranquis/subscribe">
+      <input type="hidden" name="user_id" value="{{ user_id }}">
+      <input type="hidden" name="plan" value="annual">
+      <button type="submit" class="plan-card featured">
+        <div class="plan-info">
+          <div class="plan-name">Annual</div>
+          <div class="plan-sub">£2.50 / month — save 50%</div>
+          <div class="plan-badges">
+            <span class="badge badge-best">Best Value</span>
+          </div>
+        </div>
+        <div class="plan-price">
+          <div class="price-amount">£29.99</div>
+          <div class="price-period">/ year</div>
+        </div>
+        <div class="plan-arrow">›</div>
+      </button>
+    </form>
+
+  </div>
+
+  <div class="features">
+    <div class="features-title">Everything in Pro</div>
+    <div class="feature-item">
+      <div class="feature-icon">∞</div>
+      Unlimited text translations
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">🎤</div>
+      Unlimited voice translations
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">📷</div>
+      Unlimited camera translations
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">📚</div>
+      Full phrasebook &amp; history
+    </div>
+  </div>
+
+  <div class="stripe-badge">
+    <svg viewBox="0 0 60 25" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="60" height="25" rx="4" fill="#635BFF"/>
+      <text x="8" y="17" font-family="sans-serif" font-size="10" font-weight="700" fill="white">stripe</text>
+    </svg>
+    Secure payment by Stripe
+  </div>
+  <div class="cancel-note">Cancel any time. No hidden fees.</div>
+</div>
+
+</body>
+</html>

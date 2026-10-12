@@ -33,7 +33,11 @@ class Settings(BaseSettings):
     cleanup_secret: str = Field(default="", env="CLEANUP_SECRET")
     api_url: str = Field(default="http://localhost:8000", env="API_URL")
 
-    @field_validator("frontend_url", "api_url")
+    # Tranquis web subscription
+    tranquis_web_base_url: str = Field(default="http://localhost:8000", env="TRANQUIS_WEB_BASE_URL")
+    tranquis_app_url: str = Field(default="tranquis://", env="TRANQUIS_APP_URL")
+
+    @field_validator("frontend_url", "api_url", "tranquis_web_base_url")
     @classmethod
     def _normalise_url(cls, v: str) -> str:
         # CORS compares origins exactly — "https://site.com/" never matches the
