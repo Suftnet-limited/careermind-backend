@@ -17,6 +17,21 @@ import uuid
 from app.db.models import TranslationQuota, FREE_DAILY_TRANSLATIONS
 
 
+async def is_user_pro(user) -> bool:
+    """
+    Return True if the user has an active Pro subscription.
+    Checks is_pro flag and expiry. Does NOT write to DB (caller handles commit if needed).
+    """
+    if not getattr(user, "is_pro", False):
+        return False
+    expires_at = getattr(user, "pro_expires_at", None)
+    if expires_at and expires_at < datetime.now(timezone.utc):
+        # Subscription has lapsed — reflect on the object so caller can commit
+        user.is_pro = False
+        return False
+    return True
+
+
 async def check_and_increment_quota(db: AsyncSession, user) -> dict:
     """
     Check and atomically increment the user's translation count for today.
@@ -24,8 +39,7 @@ async def check_and_increment_quota(db: AsyncSession, user) -> dict:
     Raises HTTP 429 if the free limit is exceeded.
     """
     # Pro users bypass quota entirely
-    is_pro: bool = getattr(user, "is_pro", False)
-    if is_pro or getattr(user, "is_admin", False):
+    if await is_user_pro(user) or getattr(user, "is_admin", False):
         return {"used": 0, "limit": FREE_DAILY_TRANSLATIONS, "unlimited": True}
 
     today: date = datetime.now(timezone.utc).date()
@@ -79,8 +93,7 @@ async def check_and_increment_quota(db: AsyncSession, user) -> dict:
 
 async def get_quota_status(db: AsyncSession, user) -> dict:
     """Return quota status without incrementing (for the /me or /quota endpoint)."""
-    is_pro: bool = getattr(user, "is_pro", False)
-    if is_pro or getattr(user, "is_admin", False):
+    if await is_user_pro(user) or getattr(user, "is_admin", False):
         return {"used": 0, "limit": FREE_DAILY_TRANSLATIONS, "unlimited": True}
 
     today: date = datetime.now(timezone.utc).date()

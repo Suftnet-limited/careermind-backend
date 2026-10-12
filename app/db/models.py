@@ -34,6 +34,11 @@ class User(Base):
     is_admin        = Column(Boolean, nullable=False, default=False, server_default=false())
     # Which app registered this user: 'careermind' | 'tranquis'
     app_source      = Column(String, nullable=False, default="careermind", server_default="careermind")
+    # Tranquis Pro subscription fields
+    is_pro              = Column(Boolean, nullable=False, default=False, server_default=false())
+    pro_expires_at      = Column(DateTime(timezone=True), nullable=True)   # None = no expiry
+    pro_source          = Column(String, nullable=True)   # 'stripe_web' | 'revenuecat' | 'manual'
+    stripe_customer_id  = Column(String, nullable=True)
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
     updated_at      = Column(DateTime(timezone=True), onupdate=func.now())
 
