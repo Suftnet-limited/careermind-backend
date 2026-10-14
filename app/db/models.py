@@ -2,7 +2,7 @@ import uuid
 import enum
 from sqlalchemy import (
     Column, String, Boolean, Integer, DateTime,
-    Text, ForeignKey, Enum as SAEnum, Date, UniqueConstraint,
+    Text, ForeignKey, Enum as SAEnum, UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import false, func
@@ -95,21 +95,7 @@ class InterviewSession(Base):
     created_at       = Column(DateTime(timezone=True), server_default=func.now())
 
 
-# ── Tranquis: per-user daily translation quota ────────────────────────────────
-
-FREE_DAILY_TRANSLATIONS = 10
-
-
-class TranslationQuota(Base):
-    """Tracks how many text translations a free user has used today (UTC date)."""
-    __tablename__ = "translation_quotas"
-    __table_args__ = (UniqueConstraint("user_id", "quota_date", name="uq_translation_quota_user_date"),)
-
-    id         = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id    = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    quota_date = Column(Date, nullable=False)           # UTC date the count belongs to
-    count      = Column(Integer, nullable=False, default=0)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+# The free daily limit is enforced in the app; the old translation_quotas table is unused.
 
 
 # ── Password reset tokens ─────────────────────────────────────────────────────

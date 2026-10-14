@@ -12,7 +12,6 @@ from app.db.engine import get_db
 from app.db.models import User, TranslationRecord, PhrasebookEntry
 from app.core.deps import get_current_user
 from app.config import get_settings
-from app.core.quota import get_quota_status
 from app.api.v1.interviews import parse_uuid
 import asyncio
 import base64
@@ -445,15 +444,6 @@ async def text_to_speech(
         logger.exception("Text to speech failed")
         raise HTTPException(502, "Speech unavailable. Please try again.")
     return {"audio_base64": base64.b64encode(response.content).decode(), "format": "mp3"}
-
-
-# Reported only — the daily limit isn't enforced until Pro can be bought
-@router.get("/translate/quota")
-async def translation_quota(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    return await get_quota_status(db, user)
 
 
 @router.get("/translate/history")
