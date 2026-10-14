@@ -1,7 +1,7 @@
 """Per-user daily translation quota for Tranquis free tier.
 
 Free users: FREE_DAILY_TRANSLATIONS text translations per UTC day.
-Pro users (is_pro=True on User, set by RevenueCat webhook): unlimited.
+Pro users (is_pro=True on User, set by the RevenueCat or Stripe webhook): unlimited.
 
 Usage:
     from app.core.quota import check_and_increment_quota

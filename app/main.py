@@ -11,6 +11,7 @@ from app.config import get_settings
 from app.db.migrations import run_migrations
 from app.api.v1 import auth, sessions, interviews, admin, translate, password_reset
 from app.api.tranquis import subscription as tranquis_subscription
+from app.api.tranquis import revenuecat as tranquis_revenuecat
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -85,6 +86,7 @@ app.include_router(admin.router,          prefix="/api/v1")
 app.include_router(translate.router,      prefix="/api/v1")
 # Tranquis web subscriptions — no prefix (routes are /tranquis/... and /api/v1/tranquis/...)
 app.include_router(tranquis_subscription.router)
+app.include_router(tranquis_revenuecat.router)
 
 
 @app.get("/health")

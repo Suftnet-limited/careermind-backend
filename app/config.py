@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     # Tranquis web subscription
     tranquis_web_base_url: str = Field(default="http://localhost:8000", env="TRANQUIS_WEB_BASE_URL")
     tranquis_app_url: str = Field(default="tranquis://", env="TRANQUIS_APP_URL")
+    # Sent by RevenueCat as the Authorization header on webhooks (set the same value in its dashboard)
+    revenuecat_webhook_auth: str = Field(default="", env="REVENUECAT_WEBHOOK_AUTH")
 
     @field_validator("frontend_url", "api_url", "tranquis_web_base_url")
     @classmethod
