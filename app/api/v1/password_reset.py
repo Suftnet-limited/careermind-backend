@@ -53,7 +53,7 @@ async def send_password_reset_email(to: str, name: str, raw_token: str, app_sour
         brand_color = "#14B8A6"
         tagline = "Translate the world."
         reset_url = f"tranquis://reset-password?token={raw_token}"
-        support_email = "support@tranquis.com"
+        support_email = "support@suftnet.com"
     else:
         brand = "Interquis"
         brand_color = "#6366f1"

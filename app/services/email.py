@@ -159,7 +159,7 @@ async def send_welcome_tranquis_email(to: str, name: str) -> bool:
             '<span style="font-size:13px;color:#94a3b8">'
             "Upgrade to Tranquis Pro for unlimited translations, voice interpreter, "
             "camera OCR and text-to-speech playback.<br/>"
-            "Questions? Email <a href='mailto:support@tranquis.com' style='color:#64748b'>support@tranquis.com</a></span>"
+            "Questions? Email <a href='mailto:support@suftnet.com' style='color:#64748b'>support@suftnet.com</a></span>"
         )
     )
 
