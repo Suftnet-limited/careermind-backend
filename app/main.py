@@ -78,6 +78,7 @@ app.add_middleware(
 
 app.include_router(auth.router,           prefix="/api/v1")
 app.include_router(password_reset.router, prefix="/api/v1")
+app.include_router(password_reset.tranquis_router, prefix="/api/v1")
 app.include_router(sessions.router,       prefix="/api/v1")
 app.include_router(interviews.router,     prefix="/api/v1")
 app.include_router(admin.router,          prefix="/api/v1")

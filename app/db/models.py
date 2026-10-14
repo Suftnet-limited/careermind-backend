@@ -126,6 +126,19 @@ class PasswordResetToken(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class PasswordResetCode(Base):
+    """Six-digit emailed codes for the Tranquis in-app password reset (10-minute, single use)."""
+    __tablename__ = "password_reset_codes"
+
+    id         = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id    = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    code_hash  = Column(String, nullable=False)  # HMAC-SHA256, never the code itself
+    attempts   = Column(Integer, nullable=False, default=0, server_default="0")
+    used       = Column(Boolean, nullable=False, default=False, server_default=false())
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 # ── Tranquis (AI translation) ─────────────────────────────
 
 class TranslationRecord(Base):
