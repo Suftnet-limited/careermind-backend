@@ -1,6 +1,7 @@
-"""Self-service password reset for Tranquis (and CareerMind)."""
+"""Self-service password reset for Tranquis, Facet (and CareerMind)."""
 import hashlib
 import hmac
+import re
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -14,7 +15,7 @@ from app.core.auth import hash_password
 from app.core.rate_limit import limiter, client_ip
 from app.db.engine import get_db
 from app.db.models import User, PasswordResetToken, PasswordResetCode
-from app.services.email import TRANQUIS_FROM_NAME, send_email, base_template, h1, p, btn, escape_html
+from app.services.email import TRANQUIS_FROM_NAME, FACET_FROM_NAME, send_email, base_template, h1, p, btn, escape_html
 from app.config import get_settings
 
 settings = get_settings()
@@ -45,6 +46,38 @@ def _brand_tranquis(html: str) -> str:
     )
 
 
+FACET_PURPLE = "#7C3AED"
+
+
+def _brand_facet(html: str) -> str:
+    """Swap the Interquis branding in base_template for Facet, matching the Facet welcome email."""
+    html = html.replace(
+        '<div style="font-size:20px;line-height:24px;font-weight:800;letter-spacing:-0.02em;color:#111827">Inter<span style="color:#6366f1">quis</span></div>',
+        f'<div style="font-size:20px;line-height:24px;font-weight:800;letter-spacing:-0.02em;color:#111827">Fa<span style="color:{FACET_PURPLE}">cet</span></div>',
+    ).replace(
+        '<div style="font-size:11px;line-height:16px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8">Practice interviews. Land the job.</div>',
+        '<div style="font-size:11px;line-height:16px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8">Your face. Every vibe.</div>',
+    ).replace(
+        '<tr><td height="5" bgcolor="#6366f1"',
+        f'<tr><td height="5" bgcolor="{FACET_PURPLE}"',
+    ).replace(
+        # Button (btn() is indigo by default)
+        "#4f46e5", FACET_PURPLE,
+    ).replace(
+        # Lavender page background and borders, as in the welcome email
+        "#f3f5f9", "#f5f3ff",
+    ).replace(
+        "border:1px solid #e2e8f0", "border:1px solid #ede9fe",
+    ).replace(
+        "1px solid #eef2f7", "1px solid #f5f3ff",
+    ).replace(
+        "<title>Interquis</title>", "<title>Facet</title>",
+    ).replace(
+        "Interquis&nbsp;&nbsp;", "Facet&nbsp;&nbsp;",
+    )
+    return re.sub(r'href="[^"]*/(privacy|terms)"', r'href="https://suftnet.com/\1"', html)
+
+
 async def send_password_reset_email(to: str, name: str, raw_token: str, app_source: str = "careermind") -> bool:
     first = escape_html(name.split()[0] if name.strip() else "there")
 
@@ -53,6 +86,12 @@ async def send_password_reset_email(to: str, name: str, raw_token: str, app_sour
         brand_color = "#14B8A6"
         tagline = "Translate the world."
         reset_url = f"tranquis://reset-password?token={raw_token}"
+        support_email = "support@suftnet.com"
+    elif app_source == "facet":
+        brand = "Facet"
+        brand_color = FACET_PURPLE
+        tagline = "Your face. Every vibe."
+        reset_url = f"facet://reset-password?token={raw_token}"
         support_email = "support@suftnet.com"
     else:
         brand = "Interquis"
@@ -77,14 +116,16 @@ async def send_password_reset_email(to: str, name: str, raw_token: str, app_sour
     html = base_template(content, preheader=f"Reset your {brand} password")
     if app_source == "tranquis":
         html = _brand_tranquis(html)
+    elif app_source == "facet":
+        html = _brand_facet(html)
 
-    return await send_email(to, f"Reset your {brand} password", html,
-                            from_name=TRANQUIS_FROM_NAME if app_source == "tranquis" else None)
+    from_name = {"tranquis": TRANQUIS_FROM_NAME, "facet": FACET_FROM_NAME}.get(app_source)
+    return await send_email(to, f"Reset your {brand} password", html, from_name=from_name)
 
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
-    app_source: str = "careermind"  # 'careermind' | 'tranquis'
+    app_source: str = "careermind"  # 'careermind' | 'tranquis' | 'facet'
 
 
 class ResetPasswordRequest(BaseModel):
@@ -119,7 +160,7 @@ async def forgot_password(
         db.add(reset_token)
         await db.commit()
 
-        app_source = req.app_source if req.app_source in ("careermind", "tranquis") else "careermind"
+        app_source = req.app_source if req.app_source in ("careermind", "tranquis", "facet") else "careermind"
         background_tasks.add_task(
             send_password_reset_email,
             user.email, user.name, raw_token, app_source,
@@ -164,7 +205,7 @@ async def reset_password(
     return {"reset": True}
 
 
-# ── Tranquis: emailed 6-digit reset code ──────────────────────────────────────
+# ── Tranquis & Facet: emailed 6-digit reset code ──────────────────────────────
 # Replaces /auth/reset-password-instant, which changed the password from the email
 # address alone. The code is never stored: only an HMAC of it, keyed by the server
 # secret and bound to the user, so a database leak doesn't reveal live codes.
@@ -180,17 +221,23 @@ def _hash_code(user_id: uuid.UUID, code: str) -> str:
     return hmac.new(settings.jwt_secret_key.encode(), f"{user_id}:{code}".encode(), hashlib.sha256).hexdigest()
 
 
-async def _tranquis_user(db: AsyncSession, email: str) -> User | None:
+# Mobile apps that use the code flow. CareerMind accounts reset via the emailed link instead.
+CODE_RESET_SOURCES = ("tranquis", "facet")
+
+
+async def _code_reset_user(db: AsyncSession, email: str) -> User | None:
     result = await db.execute(
-        select(User).where(User.email == email.lower(), User.app_source == "tranquis")
+        select(User).where(User.email == email.lower(), User.app_source.in_(CODE_RESET_SOURCES))
     )
     return result.scalar_one_or_none()
 
 
-async def send_reset_code_email(to: str, name: str, code: str) -> bool:
+async def send_reset_code_email(to: str, name: str, code: str, app_source: str = "tranquis") -> bool:
     first = escape_html(name.split()[0] if name.strip() else "there")
+    is_facet = app_source == "facet"
+    brand = "Facet" if is_facet else "Tranquis"
     content = (
-        h1("Your Tranquis reset code")
+        h1(f"Your {brand} reset code")
         + p(f"Hi {first}, your password reset code is:")
         + p(f'<span style="font-size:32px;font-weight:800;letter-spacing:0.3em;color:#111827">{code}</span>')
         + p(f"It expires in {CODE_TTL_MINUTES} minutes.")
@@ -199,8 +246,10 @@ async def send_reset_code_email(to: str, name: str, code: str) -> bool:
             "If you didn't ask to reset your password, you can ignore this email — your account is safe.</span>"
         )
     )
-    html = _brand_tranquis(base_template(content, preheader=f"Your password reset code is {code}"))
-    return await send_email(to, "Your Tranquis reset code", html, from_name=TRANQUIS_FROM_NAME)
+    html = base_template(content, preheader=f"Your password reset code is {code}")
+    html = _brand_facet(html) if is_facet else _brand_tranquis(html)
+    return await send_email(to, f"Your {brand} reset code", html,
+                            from_name=FACET_FROM_NAME if is_facet else TRANQUIS_FROM_NAME)
 
 
 class ResetCodeRequest(BaseModel):
@@ -222,7 +271,7 @@ async def request_reset_code(
     db: AsyncSession = Depends(get_db),
 ):
     """Email a 6-digit reset code. Always succeeds, so it can't be used to find accounts."""
-    user = await _tranquis_user(db, req.email)
+    user = await _code_reset_user(db, req.email)
     if user:
         # Only the newest code works
         await db.execute(
@@ -237,7 +286,7 @@ async def request_reset_code(
             expires_at=datetime.now(timezone.utc) + timedelta(minutes=CODE_TTL_MINUTES),
         ))
         await db.commit()
-        background_tasks.add_task(send_reset_code_email, user.email, user.name, code)
+        background_tasks.add_task(send_reset_code_email, user.email, user.name, code, user.app_source)
 
     return {"success": True}
 
@@ -253,7 +302,7 @@ async def confirm_reset_code(
     if len(req.new_password) < 8:
         raise HTTPException(400, "Password must be at least 8 characters")
 
-    user = await _tranquis_user(db, req.email)
+    user = await _code_reset_user(db, req.email)
     entry = None
     if user:
         result = await db.execute(

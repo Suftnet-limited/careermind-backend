@@ -107,11 +107,12 @@ def p(text: str) -> str:
 
 
 TRANQUIS_FROM_NAME = "Tranquis"
+FACET_FROM_NAME = "Facet"
 
 
 async def send_email(to: str, subject: str, html: str, from_name: str | None = None) -> bool:
     """Send one email. Never raises — a failed email must not break the request that triggered it.
-    `from_name` overrides the sender name; Tranquis emails pass TRANQUIS_FROM_NAME."""
+    `from_name` overrides the sender name; Tranquis and Facet emails pass their *_FROM_NAME."""
     global _sender
     if not email_configured():
         logger.warning("Email not configured (BREVO_API_KEY / BREVO_FROM_EMAIL) — not sending %r to %s", subject, to)
@@ -290,7 +291,7 @@ async def send_welcome_facet_email(to: str, name: str) -> bool:
 </body>
 </html>"""
 
-    return await send_email(to, "Welcome to Facet ✨", html)
+    return await send_email(to, "Welcome to Facet ✨", html, from_name=FACET_FROM_NAME)
 
 
 async def send_verification_email(to: str, name: str, token: str) -> bool:
