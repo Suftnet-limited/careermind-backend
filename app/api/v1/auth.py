@@ -12,7 +12,7 @@ from app.core.auth import (
     create_access_token, create_refresh_token, decode_token,
     create_email_verification_token,
 )
-from app.services.email import send_verification_email, send_welcome_tranquis_email
+from app.services.email import send_verification_email, send_welcome_tranquis_email, send_welcome_facet_email
 from app.core.deps import get_current_user
 from app.core.pricing import FREE_INTERVIEW_MINUTES
 import logging
@@ -64,7 +64,7 @@ async def register(
     if existing.scalar_one_or_none():
         raise HTTPException(400, "An account with this email already exists")
 
-    app_source = req.app_source if req.app_source in ("careermind", "tranquis") else "careermind"
+    app_source = req.app_source if req.app_source in ("careermind", "tranquis", "facet") else "careermind"
     user = User(
         id=uuid.uuid4(),
         email=req.email.lower(),
@@ -79,6 +79,8 @@ async def register(
     # Send app-appropriate welcome email (never blocks sign-up)
     if app_source == "tranquis":
         background_tasks.add_task(send_welcome_tranquis_email, user.email, user.name)
+    elif app_source == "facet":
+        background_tasks.add_task(send_welcome_facet_email, user.email, user.name)
     else:
         background_tasks.add_task(
             send_verification_email,

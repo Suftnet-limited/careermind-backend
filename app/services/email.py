@@ -216,6 +216,83 @@ async def send_welcome_tranquis_email(to: str, name: str) -> bool:
     return await send_email(to, "Welcome to Tranquis 🌍", html, from_name=TRANQUIS_FROM_NAME)
 
 
+async def send_welcome_facet_email(to: str, name: str) -> bool:
+    """Welcome email for new Facet registrations."""
+    first = escape_html(name.split()[0] if name.strip() else "there")
+    year = datetime.now().year
+    purple = "#7C3AED"
+
+    content = (
+        h1(f"Welcome to Facet, {first}!")
+        + p("Your account is ready. Start transforming photos or generating AI art from text — right from your phone.")
+        + p(
+            "<strong>Your free plan includes:</strong><br/>"
+            "✓ 3 AI creations per day<br/>"
+            "✓ Photo transformations (Anime, Cartoon, Studio & more)<br/>"
+            "✓ Text-to-image generation with 6 art styles<br/>"
+            "✓ Personal gallery"
+        )
+        + btn("Open Facet", "facet://home")
+        + p(
+            '<span style="font-size:13px;color:#94a3b8">'
+            "Upgrade to Facet PRO for unlimited creations, all 15 art styles, "
+            "and exclusive vibes.<br/>"
+            "Questions? Email <a href='mailto:support@suftnet.com' style='color:#64748b'>support@suftnet.com</a></span>"
+        )
+    )
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Facet</title>
+  <style>
+    body, table, td, a {{ -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }}
+    table {{ border-collapse:collapse !important; }}
+    a {{ text-decoration:none; }}
+    @media only screen and (max-width:620px) {{
+      .email-shell {{ padding:20px 10px !important; }}
+      .email-body {{ padding:28px 22px 30px !important; }}
+      .email-header, .email-footer {{ padding:20px 22px !important; }}
+      .email-button, .email-button a {{ width:100% !important; box-sizing:border-box !important; text-align:center !important; }}
+    }}
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#f5f3ff;font-family:Arial,'Helvetica Neue',sans-serif;color:#172033">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5f3ff">
+    <tr><td align="center">
+      <table role="presentation" class="email-shell" width="100%" cellpadding="0" cellspacing="0" border="0" style="padding:44px 20px">
+        <tr><td align="center">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background:#ffffff;border-radius:24px;border:1px solid #ede9fe;overflow:hidden;max-width:600px;width:100%">
+            <tr><td height="5" bgcolor="{purple}" style="height:5px;line-height:5px;font-size:0">&nbsp;</td></tr>
+            <tr>
+              <td class="email-header" style="padding:25px 36px 23px;border-bottom:1px solid #f5f3ff">
+                <div style="font-size:20px;line-height:24px;font-weight:800;letter-spacing:-0.02em;color:#111827">Fa<span style="color:{purple}">cet</span></div>
+                <div style="font-size:11px;line-height:16px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8">Your face. Every vibe.</div>
+              </td>
+            </tr>
+            <tr><td class="email-body" style="padding:38px 36px 40px">{content}</td></tr>
+            <tr>
+              <td class="email-footer" style="padding:22px 36px 24px;border-top:1px solid #f5f3ff;background:#f8fafc">
+                <p style="margin:0;font-size:11px;line-height:17px;color:#94a3b8;text-align:center">
+                  &copy; {year} Facet&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://suftnet.com/privacy" style="color:#64748b">Privacy</a>
+                  &nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://suftnet.com/terms" style="color:#64748b">Terms</a>
+                  <br />This transactional email was sent to your registered address.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+    return await send_email(to, "Welcome to Facet ✨", html)
+
+
 async def send_verification_email(to: str, name: str, token: str) -> bool:
     url = verification_url(token)
     if not email_configured():
