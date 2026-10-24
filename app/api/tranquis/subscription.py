@@ -34,6 +34,7 @@ from app.services.tranquis_stripe import (
     get_or_create_price,
     get_plan,
     pro_expires_from_subscription,
+    subscription_period_end,
 )
 
 logger = logging.getLogger(__name__)
@@ -171,7 +172,7 @@ async def subscribe_success(
     is_trial = False
     sub = checkout_session.subscription
     if sub:
-        ts = getattr(sub, "current_period_end", None)
+        ts = subscription_period_end(sub)
         if ts:
             renews_at = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%-d %B %Y")
         is_trial = getattr(sub, "status", "") == "trialing"
@@ -225,6 +226,13 @@ async def stripe_webhook(
         logger.error("Webhook parse error: %s", exc)
         raise HTTPException(status_code=400, detail="Bad payload")
 
+    await handle_subscription_event(event, db)
+    return Response(status_code=200)
+
+
+async def handle_subscription_event(event, db: AsyncSession) -> None:
+    """Apply a verified Stripe subscription event. Shared by the Tranquis
+    webhook and the combined /api/v1/sessions/webhook endpoint."""
     event_type = event["type"]
     data_obj = event["data"]["object"]
 
@@ -289,8 +297,6 @@ async def stripe_webhook(
 
     else:
         logger.debug("Unhandled Stripe event: %s", event_type)
-
-    return Response(status_code=200)
 
 
 # ── Subscription status (authenticated, for mobile polling) ───────────────────

@@ -8,6 +8,7 @@ from app.db.models import User, InterviewSession, InterviewStatus
 from app.core.deps import get_current_user
 from app.core.pricing import PRICES, FREE_INTERVIEW_MINUTES, INVALID_DURATION, price_display
 from app.config import get_settings
+from app.api.tranquis.subscription import handle_subscription_event
 from datetime import datetime, timezone
 import asyncio
 import logging
@@ -15,6 +16,13 @@ import stripe
 import uuid
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
+
+SUBSCRIPTION_EVENTS = {
+    "customer.subscription.created",
+    "customer.subscription.updated",
+    "customer.subscription.deleted",
+    "invoice.payment_failed",
+}
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
@@ -177,6 +185,10 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
             interview = result.scalar_one_or_none()
             if interview and apply_paid_checkout(interview, session):
                 await db.commit()
+
+    elif event["type"] in SUBSCRIPTION_EVENTS:
+        # Stripe is pointed at this one URL, so Tranquis subscription events land here too
+        await handle_subscription_event(event, db)
 
     return {"received": True}
 

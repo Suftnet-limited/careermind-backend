@@ -104,9 +104,26 @@ def get_or_create_customer(user) -> str:
     return customer.id
 
 
+def subscription_period_end(subscription) -> int | None:
+    """Unix timestamp of the current period end. Stripe API versions from
+    2025-03-31 (basil) moved this from the subscription to its items, so
+    check the top level first (older versions), then the first item."""
+    def field(obj, key):
+        return obj.get(key) if isinstance(obj, dict) else getattr(obj, key, None)
+
+    ts = field(subscription, "current_period_end")
+    if ts is not None:
+        return ts
+    items = field(subscription, "items")
+    data = field(items, "data") if items is not None else None
+    if data:
+        return field(data[0], "current_period_end")
+    return None
+
+
 def pro_expires_from_subscription(subscription) -> datetime | None:
     """Convert Stripe subscription current_period_end to a timezone-aware datetime."""
-    ts = getattr(subscription, "current_period_end", None)
+    ts = subscription_period_end(subscription)
     if ts is None:
         return None
     return datetime.fromtimestamp(ts, tz=timezone.utc)
